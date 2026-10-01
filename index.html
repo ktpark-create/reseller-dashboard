@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --ink:#1f2328; --sub:#6b7280; --line:#e5e7eb;
+    --navy:#305496; --red:#b42318; --redbg:#fde8e7; --org:#c55a11; --orgbg:#fdeee3;
+    --gray:#6b7280; --graybg:#eef0f3; --t:#1f4e78; --tbg:#e3eefa; --c:#375623; --cbg:#e6f1df;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:13px}
+  header{background:var(--navy);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:700}
+  header .meta{font-size:12px;opacity:.85}
+  header .sp{flex:1}
+  header button,header a{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;font-family:inherit}
+  header button:hover,header a:hover{background:rgba(255,255,255,.25)}
+  main{max-width:1400px;margin:0 auto;padding:20px 24px 40px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .filters select,.filters input{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;background:#fff}
+  .filters input{min-width:260px}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:default}
+  .kpi.click{cursor:pointer}.kpi.click:hover{border-color:var(--navy)}
+  .kpi .l{color:var(--sub);font-size:12px}
+  .kpi .v{font-size:28px;font-weight:700;margin-top:4px}
+  .kpi .h{font-size:11px;color:var(--sub);margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h2{font-size:14px;margin:0 0 12px}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:8px 14px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:13px;color:var(--sub);border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
+  .tab .n{background:var(--graybg);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#f8f9fb;text-align:left;font-weight:600;color:#374151;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;cursor:pointer;user-select:none}
+  td{padding:7px 8px;border-bottom:1px solid #f0f1f3;vertical-align:top;white-space:nowrap}
+  tr:hover td{background:#fafbfc}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  td.c,th.c{text-align:center}
+  .wrap{max-height:620px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+  .s-신규{background:var(--orgbg);color:var(--org)} .s-판매중{background:var(--redbg);color:var(--red)}
+  .s-품절{background:var(--graybg);color:var(--gray)} .s-중지{background:#f5f5f5;color:#a3a3a3}
+  .p-T{background:var(--tbg);color:var(--t)} .p-C{background:var(--cbg);color:var(--c)}
+  .flag-a{background:var(--redbg);color:var(--red)} .flag-b{background:var(--orgbg);color:var(--org)}
+  .muted{color:var(--sub)} .warnno{color:var(--red);font-weight:700}
+  a.lk{color:#0b62d6;text-decoration:none} a.lk:hover{text-decoration:underline}
+  .bar{display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--graybg);min-width:40px}
+  .bar span{display:block;height:100%}
+  .legend{display:flex;gap:12px;font-size:11px;color:var(--sub);margin-bottom:8px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+  .clip{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pre{white-space:pre-line}
+  #loading{padding:60px;text-align:center;color:var(--sub)}
+  #err{display:none;margin:20px;padding:16px;background:var(--redbg);color:var(--red);border-radius:8px}
+  @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}main{padding:16px}.filters input{min-width:0;flex:1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>리셀러 관리 대시보드</h1>
+  <span class="meta" id="meta">불러오는 중…</span>
+  <span class="sp"></span>
+  <a id="sheetLink" href="#" target="_blank">구글 시트 열기</a>
+  <button onclick="load()">새로고침</button>
+</header>
+<div id="err"></div>
+<main>
+  <div id="loading">데이터를 불러오는 중입니다…</div>
+  <div id="app" style="display:none">
+    <div class="filters">
+      <select id="fProd"><option value="">전체 제품</option><option value="T">트루멜라</option><option value="C">콘드로이친</option></select>
+      <select id="fSite"><option value="">전체 사이트</option></select>
+      <input id="fQ" placeholder="사업자번호 · 업체명 · 스토어명 · 대표자 · 전화 · 이메일 검색">
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid2">
+      <div class="card"><h2>제품별 상태</h2><div id="prodTable"></div></div>
+      <div class="card"><h2>사이트별 상태 <span class="muted" style="font-weight:400;font-size:11px">· 여러 사이트에 등록된 상품은 각각 집계</span></h2>
+        <div class="legend"><span><i style="background:#c55a11"></i>신규</span><span><i style="background:#b42318"></i>판매중</span><span><i style="background:#9ca3af"></i>품절</span><span><i style="background:#d9dce1"></i>중지</span></div>
+        <div id="siteTable"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" id="tabs"></div>
+      <div id="tabBody"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const PROD={T:'트루멜라',C:'콘드로이친'};
+const ST=['신규','판매중','품절','중지'];
+const STC={'신규':'#c55a11','판매중':'#b42318','품절':'#9ca3af','중지':'#d9dce1'};
+let RAW=[], tab='action', sortState={};
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function first(s){return String(s||'').split('\n')[0].trim()}
+function sites(s){return String(s||'').split(',').map(x=>x.trim().replace('지마켓','G마켓')).filter(Boolean)}
+function money(v){const n=Number(String(v).replace(/[^\d.-]/g,''));return v===''||isNaN(n)?'':n.toLocaleString('ko-KR')}
+
+function load(){
+  document.getElementById('meta').textContent='불러오는 중…';
+  if(typeof google!=='undefined'&&google.script){
+    google.script.run.withSuccessHandler(onData).withFailureHandler(e=>{
+      const el=document.getElementById('err');el.style.display='block';el.textContent='불러오기 실패: '+e.message;
+      document.getElementById('loading').style.display='none';
+    }).getData();
+  } else if(window.MOCK){ onData(window.MOCK); }
+}
+function onData(d){
+  const H=d.header, ix=n=>H.indexOf(n);
+  const col={제품:ix('제품'),사업자번호:ix('사업자번호'),사업자명:ix('사업자명'),스토어명:ix('스토어명'),대표자명:ix('대표자명'),
+    상태:ix('상태'),판매금액:ix('판매금액'),사이트:ix('사이트'),판매링크:ix('판매링크'),옵션:ix('옵션'),최초확인일:ix('최초확인일'),
+    최종확인일:ix('최종확인일'),경고문발송일:ix('경고문발송일'),전화번호:ix('전화번호'),이메일:ix('이메일'),사업자주소:ix('사업자주소'),
+    반품주소:ix('반품주소'),주문주소:ix('주문주소'),메모:ix('메모')};
+  RAW=d.rows.map(r=>{const o={};for(const k in col)o[k]=col[k]>=0?String(r[col[k]]||'').trim():'';
+    o.key=o.사업자번호||first(o.스토어명);o.siteList=sites(o.사이트);
+    o.text=[o.사업자번호,o.사업자명,o.스토어명,o.대표자명,o.전화번호,o.이메일].join(' ').toLowerCase();return o});
+  document.getElementById('meta').textContent='갱신 '+d.updated+' · RAW '+RAW.length+'행';
+  if(d.sheetUrl)document.getElementById('sheetLink').href=d.sheetUrl;
+  const allSites=[...new Set(RAW.flatMap(r=>r.siteList))].sort();
+  const fs=document.getElementById('fSite'), cur=fs.value;
+  fs.innerHTML='<option value="">전체 사이트</option>'+allSites.map(s=>`<option ${s===cur?'selected':''}>${esc(s)}</option>`).join('');
+  document.getElementById('loading').style.display='none';document.getElementById('app').style.display='block';
+  render();
+}
+function filtered(){
+  const p=fProd.value,s=fSite.value,q=fQ.value.trim().toLowerCase();
+  return RAW.filter(r=>(!p||r.제품===p)&&(!s||r.siteList.includes(s))&&(!q||r.text.includes(q)));
+}
+function companies(rows){
+  const m=new Map();
+  rows.forEach(r=>{let c=m.get(r.key);if(!c){c={key:r.key,사업자번호:r.사업자번호,사업자명:r.사업자명,대표자명:r.대표자명,스토어:new Set(),제품:new Set(),
+    n:0,신규:0,판매중:0,품절:0,중지:0,warn:[],전화:new Set(),이메일:new Set(),주소:r.사업자주소};m.set(r.key,c)}
+    c.n++;if(c[r.상태]!=null)c[r.상태]++;c.스토어.add(first(r.스토어명));if(r.제품)c.제품.add(r.제품);
+    if(r.경고문발송일&&!c.warn.includes(r.경고문발송일))c.warn.push(r.경고문발송일);
+    if(r.전화번호)c.전화.add(first(r.전화번호));if(r.이메일)c.이메일.add(first(r.이메일));});
+  return [...m.values()].map(c=>{const sell=c.신규+c.판매중;c.flag=sell?(c.warn.length?'경고 후 판매중':'미조치 판매'):'';return c});
+}
+function render(){
+  const rows=filtered(), comps=companies(rows);
+  const act=rows.filter(r=>r.상태==='신규'||r.상태==='판매중');
+  const k=[
+    ['전체 상품',rows.length,'RAW 등록 상품 수',''],
+    ['등록 업체',comps.length,'사업자번호 기준',''],
+    ['신규',rows.filter(r=>r.상태==='신규').length,'당일 첫 발견','var(--org)'],
+    ['판매중',rows.filter(r=>r.상태==='판매중').length,'현재 판매 확인','var(--red)'],
+    ['미조치 판매중',act.filter(r=>!r.경고문발송일).length,'경고문 미발송 → 경고메일 발송','var(--red)','action'],
+    ['경고 후 판매중',act.filter(r=>r.경고문발송일).length,'경고 무시 → 내용증명 검토','var(--red)','action']];
+  kpis.innerHTML=k.map(x=>`<div class="kpi ${x[4]?'click':''}" ${x[4]?`onclick="tab='${x[4]}';render()"`:''}><div class="l">${x[0]}</div><div class="v" style="color:${x[3]||'var(--ink)'}">${x[1]}</div><div class="h">${x[2]}</div></div>`).join('');
+  // product table
+  prodTable.innerHTML='<table><tr><th>제품</th>'+ST.map(s=>`<th class="num">${s}</th>`).join('')+'<th class="num">합계</th></tr>'+
+    ['T','C'].map(p=>{const rr=rows.filter(r=>r.제품===p);return `<tr><td><span class="badge p-${p}">${PROD[p]}</span></td>`+
+    ST.map(s=>`<td class="num">${rr.filter(r=>r.상태===s).length||'-'}</td>`).join('')+`<td class="num"><b>${rr.length}</b></td></tr>`}).join('')+'</table>';
+  // site table
+  const sl=[...new Set(rows.flatMap(r=>r.siteList))];
+  const sd=sl.map(s=>{const rr=rows.filter(r=>r.siteList.includes(s));const o={s,n:rr.length};ST.forEach(t=>o[t]=rr.filter(r=>r.상태===t).length);return o}).sort((a,b)=>(b.신규+b.판매중)-(a.신규+a.판매중)||b.n-a.n);
+  const mx=Math.max(1,...sd.map(x=>x.n));
+  siteTable.innerHTML='<table><tr><th>사이트</th><th style="width:45%">상태 분포</th><th class="num">신규+판매중</th><th class="num">전체</th></tr>'+sd.map(x=>
+    `<tr><td>${esc(x.s)}</td><td><div class="bar" style="width:${Math.max(8,x.n/mx*100)}%">${ST.map(t=>x[t]?`<span title="${t} ${x[t]}" style="width:${x[t]/x.n*100}%;background:${STC[t]}"></span>`:'').join('')}</div></td>
+    <td class="num" style="color:var(--red);font-weight:700">${(x.신규+x.판매중)||'-'}</td><td class="num">${x.n}</td></tr>`).join('')+'</table>';
+  // tabs
+  const T=[['action','조치 필요',act.length],['comp','업체 현황',comps.length],['all','전체 상품',rows.length]];
+  tabs.innerHTML=T.map(t=>`<button class="tab ${tab===t[0]?'on':''}" onclick="tab='${t[0]}';render()">${t[1]}<span class="n">${t[2]}</span></button>`).join('');
+  if(tab==='action') tabBody.innerHTML=listTable(act.sort((a,b)=>ST.indexOf(a.상태)-ST.indexOf(b.상태)||(a.경고문발송일?1:0)-(b.경고문발송일?1:0)),true);
+  else if(tab==='all') tabBody.innerHTML=listTable(rows,false);
+  else tabBody.innerHTML=compTable(comps);
+}
+function linkCell(v){const u=first(v);if(!/^https?:\/\//.test(u))return esc(u);const n=String(v).split('\n').filter(Boolean).length;
+  return `<a class="lk" href="${esc(u)}" target="_blank">링크</a>${n>1?` <span class="muted">+${n-1}</span>`:''}`}
+function listTable(rows,isAction){
+  if(!rows.length)return '<div class="muted" style="padding:20px">해당하는 상품이 없습니다.</div>';
+  return `<div class="wrap"><table><tr><th>제품</th><th>상태</th><th>경고문</th><th>사업자명</th><th>스토어명</th><th>사이트</th><th class="c">링크</th><th>옵션</th><th class="num">판매금액</th><th>최초확인</th><th>최종확인</th><th>전화번호</th><th>메모</th></tr>`+
+  rows.map(r=>`<tr><td><span class="badge p-${esc(r.제품)}">${PROD[r.제품]||esc(r.제품)}</span></td><td><span class="badge s-${esc(r.상태)}">${esc(r.상태||'-')}</span></td>
+  <td class="clip" title="${esc(r.경고문발송일)}">${r.경고문발송일?esc(r.경고문발송일):'<span class="warnno">미조치</span>'}</td>
+  <td>${esc(r.사업자명)}</td><td class="clip" title="${esc(r.스토어명)}">${esc(first(r.스토어명))}</td><td>${esc(r.siteList.join(', '))}</td>
+  <td class="c">${linkCell(r.판매링크)}</td><td>${esc(r.옵션)}</td><td class="num">${money(r.판매금액)}</td><td>${esc(r.최초확인일)}</td><td>${esc(r.최종확인일)}</td>
+  <td>${esc(first(r.전화번호))}</td><td class="clip" title="${esc(r.메모)}">${esc(first(r.메모))}</td></tr>`).join('')+'</table></div>';
+}
+function compTable(cs){
+  cs.sort((a,b)=>(b.flag==='경고 후 판매중')-(a.flag==='경고 후 판매중')||(b.flag?1:0)-(a.flag?1:0)||(b.신규+b.판매중)-(a.신규+a.판매중)||b.n-a.n);
+  return `<div class="wrap"><table><tr><th>조치 필요</th><th>사업자번호</th><th>사업자명</th><th>대표자</th><th>스토어명</th><th>제품</th><th class="num">상품</th><th class="num">신규</th><th class="num">판매중</th><th class="num">품절</th><th class="num">중지</th><th>경고문 이력</th><th>전화번호</th><th>이메일</th></tr>`+
+  cs.map(c=>`<tr><td>${c.flag?`<span class="badge ${c.flag==='경고 후 판매중'?'flag-a':'flag-b'}">${c.flag}</span>`:''}</td><td>${esc(c.사업자번호)}</td><td>${esc(c.사업자명)}</td><td>${esc(first(c.대표자명))}</td>
+  <td class="clip" title="${esc([...c.스토어].join(', '))}">${esc([...c.스토어].join(', '))}</td><td>${[...c.제품].map(p=>`<span class="badge p-${p}">${PROD[p]||p}</span>`).join(' ')}</td>
+  <td class="num">${c.n}</td><td class="num">${c.신규||''}</td><td class="num" style="color:var(--red);font-weight:700">${c.판매중||''}</td><td class="num">${c.품절||''}</td><td class="num">${c.중지||''}</td>
+  <td class="clip" title="${esc(c.warn.join(' / '))}">${esc(c.warn.join(' / '))}</td><td>${esc([...c.전화][0]||'')}</td><td>${esc([...c.이메일][0]||'')}</td></tr>`).join('')+'</table></div>';
+}
+['fProd','fSite'].forEach(id=>document.getElementById(id).addEventListener('change',render));
+document.getElementById('fQ').addEventListener('input',render);
+load();
+setInterval(load,5*60*1000);
+</script>
+</body>
+</html>
